@@ -1,0 +1,12 @@
+stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding,platform_code
+HURS,,Hurstville Station,-33.9675,151.1020,1,,1,
+HURS_P1,,Hurstville Station Platform 1,-33.9676,151.1021,0,HURS,1,1
+HURS_P2,,Hurstville Station Platform 2,-33.9677,151.1022,0,HURS,1,2
+HURS_SA,222001,"Hurstville Station, Stand A",-33.9671,151.1015,0,HURS,1,A
+HURS_SB,222002,"Hurstville Station, Stand B",-33.9672,151.1016,0,HURS,2,B
+KOG,,Kogarah Station,-33.9631,151.1334,1,,1,
+KOG_P1,,Kogarah Station Platform 1,-33.9632,151.1335,0,KOG,1,1
+CEN,,Central Station,-33.8832,151.2070,1,,1,
+CEN_P20,,Central Station Platform 20,-33.8833,151.2071,0,CEN,1,20
+FRST,222101,Forest Rd opp Westfield,-33.9660,151.0990,0,,0,
+PEAK,221001,Peakhurst Shops,-33.9600,151.0600,0,,1,

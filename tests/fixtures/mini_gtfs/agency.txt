@@ -1,0 +1,3 @@
+﻿agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone
+SYDT,Example Trains,https://example.org/trains,Australia/Sydney,en,
+BUSCO,Example Bus Co,https://example.org/bus,Australia/Sydney,en,

@@ -1,0 +1,4 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_color,route_text_color,route_url
+T4_EX,SYDT,T4,Eastern Suburbs & Illawarra Line,Sydney Trains Network,2,005AA3,FFFFFF,https://example.org/t4
+901_EX,BUSCO,901,Hurstville to Peakhurst,Example Bus,700,00B5EF,FFFFFF,
+902_EX,BUSCO,902,Hurstville to Forest Road,Example Bus,700,00B5EF,FFFFFF,

@@ -1,0 +1,14 @@
+# Opens pull requests when dependencies have updates. Each one runs CI, so
+# you merge only updates that pass.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

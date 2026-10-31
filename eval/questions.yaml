@@ -1,0 +1,225 @@
+# Sydney transport assistant: evaluation set
+#
+# Write these BEFORE building the clever parts, and do not tune prompts by
+# reading the `test` split. See eval/README.md for the labelling guide.
+#
+# Check the file any time with:
+#   python eval/validate_eval_set.py              # structure and coverage
+#   python eval/validate_eval_set.py --run-sql    # also execute every gold_sql
+#
+# Field reference
+#   id               sql-001, docs-001, both-001, none-001 (prefix must match route)
+#   question         phrased the way a real rider would type it
+#   route            sql | docs | both | none   (what the router should choose)
+#   behaviour        answer | clarify | refuse  (what the system should do)
+#   split            dev | test   (keep about 20% as test and never look at failures there)
+#   gold_sql         sql/both: a query that returns the facts needed for the answer
+#   gold_doc_ids     docs/both: doc_id values from docs.documents that contain the answer
+#   expected_answer  the reference answer in plain English; "TODO" until filled
+#   must_include     short facts a correct answer has to state (used for automatic checks)
+#   tags             free-form, used to slice results (stop-resolution, after-midnight, ...)
+#   difficulty       easy | medium | hard
+#   notes            why the question is in the set, edge cases, sources
+
+version: 1
+
+# Target mix for the first full version (60 questions)
+targets:
+  route:
+    sql: 20
+    docs: 25
+    both: 10
+    none: 5
+  test_share: 0.2
+
+questions:
+
+  # ------------------------------------------------------------------ SQL
+  - id: sql-001
+    question: How many bus routes stop at Hurstville Station?
+    route: sql
+    behaviour: answer
+    split: dev
+    gold_sql: |
+      SELECT count(DISTINCT r.route_id) AS bus_routes
+      FROM gtfs.stops s
+      JOIN gtfs.stop_times st ON st.stop_id = s.stop_id
+      JOIN gtfs.trips t ON t.trip_id = st.trip_id
+      JOIN gtfs.routes r ON r.route_id = t.route_id
+      WHERE (s.stop_id IN (SELECT stop_id FROM gtfs.stops WHERE stop_name = 'Hurstville Station' AND location_type = 1)
+             OR s.parent_station IN (SELECT stop_id FROM gtfs.stops WHERE stop_name = 'Hurstville Station' AND location_type = 1))
+        AND (r.route_type = 3 OR r.route_type BETWEEN 700 AND 799)
+    expected_answer: TODO
+    must_include: []
+    tags: [stop-resolution, station-children, aggregation]
+    difficulty: medium
+    notes: >
+      The model must expand the station to its stands via parent_station;
+      matching stop_name alone misses every bus stand.
+
+  - id: sql-002
+    question: What time is the first T4 train from Hurstville on a weekday?
+    route: sql
+    behaviour: answer
+    split: dev
+    gold_sql: |
+      SELECT st.departure_time, t.trip_headsign
+      FROM gtfs.stop_times st
+      JOIN gtfs.trips t ON t.trip_id = st.trip_id
+      JOIN gtfs.routes r ON r.route_id = t.route_id
+      JOIN gtfs.calendar c ON c.service_id = t.service_id
+      JOIN gtfs.stops s ON s.stop_id = st.stop_id
+      WHERE r.route_short_name = 'T4'
+        AND c.monday = 1
+        AND s.parent_station = (SELECT stop_id FROM gtfs.stops WHERE stop_name = 'Hurstville Station' AND location_type = 1)
+      ORDER BY st.departure_secs
+      LIMIT 1
+    expected_answer: TODO
+    must_include: []
+    tags: [first-last-service, calendar]
+    difficulty: medium
+    notes: Sort on departure_secs, not departure_time text.
+
+  - id: sql-003
+    question: Which trains leave Hurstville after midnight?
+    route: sql
+    behaviour: answer
+    split: dev
+    gold_sql: |
+      SELECT r.route_short_name, st.departure_time, t.trip_headsign
+      FROM gtfs.stop_times st
+      JOIN gtfs.trips t ON t.trip_id = st.trip_id
+      JOIN gtfs.routes r ON r.route_id = t.route_id
+      JOIN gtfs.stops s ON s.stop_id = st.stop_id
+      WHERE s.parent_station = (SELECT stop_id FROM gtfs.stops WHERE stop_name = 'Hurstville Station' AND location_type = 1)
+        AND st.departure_secs >= 24 * 3600
+        AND r.route_type = 2
+      ORDER BY st.departure_secs
+    expected_answer: TODO
+    must_include: []
+    tags: [after-midnight, time-arithmetic]
+    difficulty: hard
+    notes: >
+      GTFS times past 24:00:00 belong to the previous service day. A model
+      that filters departure_time > '00:00' gets this wrong.
+
+  - id: sql-004
+    question: how many stops does the 901 make towards peakhurst
+    route: sql
+    behaviour: answer
+    split: test
+    gold_sql: |
+      SELECT t.trip_headsign, count(*) AS stops
+      FROM gtfs.trips t
+      JOIN gtfs.routes r ON r.route_id = t.route_id
+      JOIN gtfs.stop_times st ON st.trip_id = t.trip_id
+      WHERE r.route_short_name = '901'
+        AND t.trip_headsign ILIKE '%peakhurst%'
+      GROUP BY t.trip_id, t.trip_headsign
+      ORDER BY stops DESC
+      LIMIT 1
+    expected_answer: TODO
+    must_include: []
+    tags: [direction, lowercase-input]
+    difficulty: easy
+    notes: Direction is given by headsign, not direction_id.
+
+  - id: sql-005
+    question: When's the next bus from Hurstville?
+    route: sql
+    behaviour: clarify
+    split: dev
+    gold_sql: null
+    expected_answer: >
+      Should ask which route or destination the rider wants (or offer the
+      next departures by stand), because Hurstville has many bus stands
+      and routes.
+    must_include: []
+    tags: [ambiguous, stop-resolution, clarify]
+    difficulty: medium
+    notes: >
+      Tests clarification instead of guessing. "Next" also needs the current
+      time, so the app must inject now() in Australia/Sydney.
+
+  # ----------------------------------------------------------------- DOCS
+  - id: docs-001
+    question: Can I take my bike on a Sydney train?
+    route: docs
+    behaviour: answer
+    split: dev
+    gold_doc_ids: [TODO]
+    expected_answer: TODO
+    must_include: []
+    tags: [bikes, policy]
+    difficulty: easy
+    notes: Fill from the official TfNSW bikes page; record its doc_id after ingestion.
+
+  - id: docs-002
+    question: How does the Opal weekly travel cap work?
+    route: docs
+    behaviour: answer
+    split: dev
+    gold_doc_ids: [TODO]
+    expected_answer: TODO
+    must_include: []
+    tags: [fares, opal]
+    difficulty: medium
+    notes: >
+      Fare amounts change. Record the date you checked the source in notes
+      and re-check before each eval run you report.
+
+  - id: docs-003
+    question: Do kids need to pay on public transport?
+    route: docs
+    behaviour: answer
+    split: test
+    gold_doc_ids: [TODO]
+    expected_answer: TODO
+    must_include: []
+    tags: [fares, concessions, paraphrase]
+    difficulty: medium
+    notes: The source page will say "child" and "concession", not "kids"; tests semantic retrieval.
+
+  # ----------------------------------------------------------------- BOTH
+  - id: both-001
+    question: Is Hurstville Station wheelchair accessible, and how do I get help boarding?
+    route: both
+    behaviour: answer
+    split: dev
+    gold_sql: |
+      SELECT stop_name, wheelchair_boarding
+      FROM gtfs.stops
+      WHERE stop_name = 'Hurstville Station' AND location_type = 1
+    gold_doc_ids: [TODO]
+    expected_answer: TODO
+    must_include: []
+    tags: [accessibility, multi-source]
+    difficulty: medium
+    notes: >
+      Accessibility status comes from GTFS (wheelchair_boarding); how to
+      request assistance comes from the accessibility policy page.
+
+  # ----------------------------------------------------------------- NONE
+  - id: none-001
+    question: Will the T4 be late next Monday morning?
+    route: none
+    behaviour: refuse
+    split: dev
+    expected_answer: >
+      Should say it cannot predict future delays, and may offer the
+      scheduled times or point to live service updates closer to the time.
+    must_include: []
+    tags: [prediction, out-of-scope]
+    difficulty: easy
+    notes: Guards against the model inventing a forecast from historical data.
+
+  - id: none-002
+    question: What's a good place to eat near Hurstville Station?
+    route: none
+    behaviour: refuse
+    split: test
+    expected_answer: Should say this is outside what the assistant covers.
+    must_include: []
+    tags: [out-of-scope]
+    difficulty: easy
+    notes: ""

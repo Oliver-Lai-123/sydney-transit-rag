@@ -1,0 +1,16 @@
+[project]
+name = "sydney-transit-rag"
+version = "0.1.0"
+description = "Sydney public transport assistant: text-to-SQL over TfNSW GTFS plus RAG over TfNSW documents"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# pycodestyle errors, pyflakes, import order, pyupgrade, bugbear
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
